@@ -343,7 +343,8 @@ export const PDFView = React.forwardRef<HTMLDivElement, PDFViewProps>(({ pdfItem
                     </div>
 
                     {/* RIGHT COLUMN: All Vocab Cards (Tetris Stack) */}
-                    <div className="flex flex-col gap-2 pt-0">
+                    {/* CHANGED: Switched from flex to block to prevent print slicing issues in sidebar */}
+                    <div className="block pt-0">
                       {group.items.flatMap((entry: any) => 
                         (entry.item.data.vocab || [])
                           .filter((v: any) => {
@@ -359,13 +360,12 @@ export const PDFView = React.forwardRef<HTMLDivElement, PDFViewProps>(({ pdfItem
                                   // KEEP: pdf-avoid-break here to prevent slicing small cards
                                   // ADD: display: block and margin-bottom to ensure safe print boundaries
                                   className={`
-                                    break-inside-avoid border-l-2 pl-3 py-2 rounded-r-sm pdf-avoid-break mb-2
+                                    relative block break-inside-avoid border-l-2 pl-3 py-2 rounded-r-sm pdf-avoid-break mb-2
                                     ${getLevelClass(level)} ${getHighlightBg(level)}
                                   `}
                                   style={{ 
                                     pageBreakInside: 'avoid', 
-                                    breakInside: 'avoid',
-                                    display: 'block'
+                                    breakInside: 'avoid'
                                   }}
                                 >
                                   <div className="flex items-center flex-wrap gap-1.5 mb-1">
