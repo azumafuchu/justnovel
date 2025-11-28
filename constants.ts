@@ -106,6 +106,8 @@ export const TRANSLATIONS = {
     guideStep5: "Export PDF",
     guideDesc5: "Add processed content to the PDF Preview area and export your study material.",
     gotIt: "Got it",
+    clearPdf: "Clear",
+    confirmClearPdf: "Clear all PDF content? This cannot be undone.",
   },
   zh_cn: {
     appTitle: "只想看小说",
@@ -177,6 +179,8 @@ export const TRANSLATIONS = {
     guideStep5: "导出 PDF",
     guideDesc5: "将处理好的内容“加入 PDF”预览区，最后导出精美的学习讲义。",
     gotIt: "知道了",
+    clearPdf: "清空",
+    confirmClearPdf: "确定要清空 PDF 预览区的内容吗？",
   },
   zh_tw: {
     appTitle: "只想看小說",
@@ -248,5 +252,7 @@ export const TRANSLATIONS = {
     guideStep5: "匯出 PDF",
     guideDesc5: "將處理好的內容“加入 PDF”預覽區，最後匯出精美的學習講義。",
     gotIt: "知道了",
+    clearPdf: "清空",
+    confirmClearPdf: "確定要清空 PDF 預覽區的內容嗎？",
   }
 };

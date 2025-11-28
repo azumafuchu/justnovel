@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { X, BookOpen, Database, Wand2, FileText, Download } from 'lucide-react';
 
@@ -50,7 +49,7 @@ export const GuideModal: React.FC<GuideModalProps> = ({ isOpen, onClose, t }) =>
   ];
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-[1002] flex justify-center items-center animate-in fade-in duration-200">
+    <div className="fixed inset-0 bg-black/50 z-[1002] flex justify-center items-center animate-in fade-in duration-200 print:hidden">
       <div className="bg-white rounded-xl shadow-2xl w-[800px] max-h-[90vh] overflow-y-auto flex flex-col">
         {/* Header */}
         <div className="p-6 border-b flex justify-between items-center sticky top-0 bg-white z-10">

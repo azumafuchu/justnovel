@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AppSettings } from '../types';
 import { Settings, X, Globe, Type, Cpu, RefreshCw, List } from 'lucide-react';
@@ -95,7 +94,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-[999] flex justify-center items-center">
+    <div className="fixed inset-0 bg-black/50 z-[999] flex justify-center items-center print:hidden">
       <div className="bg-white rounded-xl shadow-2xl w-[500px] max-h-[90vh] overflow-y-auto p-6">
         <div className="flex justify-between items-center mb-6 border-b pb-4">
           <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">

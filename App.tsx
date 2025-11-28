@@ -11,8 +11,6 @@ import { parseNovel, analyzeTextForVocab } from './utils/textProcessing';
 import { AIService } from './services/aiService';
 import { Settings as SettingsIcon, Layout, BookOpen, CheckCircle, Download, AlertTriangle, Save, UploadCloud } from 'lucide-react';
 
-declare const html2pdf: any;
-
 const App: React.FC = () => {
   // --- State ---
   const [activeTab, setActiveTab] = useState<'staging' | 'pdf'>('staging');
@@ -251,6 +249,13 @@ const App: React.FC = () => {
     localStorage.removeItem('pdf_content');
   };
 
+  const handleClearPdf = () => {
+    if (confirm(t('confirmClearPdf'))) {
+        setPdfItems([]);
+        localStorage.removeItem('pdf_content');
+    }
+  };
+
   const saveNovelState = (fileName: string, chaps: Chapter[]) => {
     localStorage.setItem('novel_progress', JSON.stringify({ fileName, chapters: chaps }));
   };
@@ -434,36 +439,14 @@ const App: React.FC = () => {
   };
 
   const handleExportPdf = () => {
-    if (typeof html2pdf === 'undefined') {
-      alert("PDF library not loaded. Please check internet connection.");
-      return;
+    console.log("Export button clicked - triggering window.print()");
+    try {
+      // Switch to Native Browser Print
+      window.print();
+    } catch (error) {
+      console.error("Print dialog failed to open:", error);
+      alert("Failed to open print dialog. Please try Ctrl+P (Cmd+P) manually.");
     }
-    const element = document.getElementById('pdf-root');
-    if (!element) {
-        alert("Could not find PDF content to export.");
-        return;
-    }
-    const opt = {
-      margin: [10, 0, 20, 0], // Top, Left, Bottom, Right. Bottom increased to 20mm.
-      filename: `lecture_${currentFileName || 'export'}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['css', 'legacy'] }
-    };
-    
-    // We export the whole container, trusting the page-break-after CSS
-    html2pdf().from(element).set(opt).toPdf().get('pdf').then((pdf: any) => {
-        const totalPages = pdf.internal.getNumberOfPages();
-        for (let i = 1; i <= totalPages; i++) {
-            pdf.setPage(i);
-            pdf.setFontSize(10);
-            pdf.setTextColor(150);
-            const pageWidth = pdf.internal.pageSize.getWidth();
-            const pageHeight = pdf.internal.pageSize.getHeight();
-            pdf.text(String(i), pageWidth / 2, pageHeight - 8, { align: 'center' });
-        }
-    }).save();
   };
 
   // --- Project Import/Export ---
@@ -626,22 +609,27 @@ const App: React.FC = () => {
                pdfItems={pdfItems} 
                vocabDB={vocabDB} 
                onRemoveItem={(index) => setPdfItems(prev => prev.filter((_, i) => i !== index))}
+               onClearPdf={handleClearPdf}
                fontFamily={settings.fontFamily}
                t={t}
              />
            </div>
-
-           {/* Floating Export Button */}
-           <div className="fixed bottom-8 right-8 z-50 print:hidden">
-              <button 
-                onClick={handleExportPdf} 
-                className="bg-primary hover:bg-blue-800 text-white px-6 py-4 rounded-full shadow-2xl flex items-center gap-3 font-bold text-lg transition-transform hover:scale-110 active:scale-95 border-2 border-white/20"
-              >
-                <Download size={24} /> {t('exportPdf')}
-              </button>
-           </div>
+           
+           {/* Floating Export Button moved out of here to root level */}
         </div>
       </div>
+
+      {/* Floating Export Button (Root Level) */}
+      {activeTab === 'pdf' && (
+        <div className="fixed bottom-8 right-8 z-[100] print:hidden">
+          <button 
+            onClick={handleExportPdf} 
+            className="bg-primary hover:bg-blue-800 text-white px-6 py-4 rounded-full shadow-2xl flex items-center gap-3 font-bold text-lg transition-transform hover:scale-110 active:scale-95 border-2 border-white/20"
+          >
+            <Download size={24} /> {t('exportPdf')}
+          </button>
+        </div>
+      )}
 
       <SettingsModal 
         isOpen={isSettingsOpen}
@@ -659,7 +647,7 @@ const App: React.FC = () => {
 
       {/* Completion Modal */}
       {completionModal && (
-        <div className="fixed inset-0 bg-black/50 z-[1000] flex justify-center items-center animate-in fade-in">
+        <div className="fixed inset-0 bg-black/50 z-[1000] flex justify-center items-center animate-in fade-in print:hidden">
           <div className="bg-white p-8 rounded-xl shadow-2xl flex flex-col items-center gap-4 max-w-sm text-center">
             <CheckCircle size={48} className="text-green-500" />
             <h3 className="text-xl font-bold text-gray-800">{completionModal.msg}</h3>
@@ -676,7 +664,7 @@ const App: React.FC = () => {
 
       {/* Error Modal */}
       {errorModal && (
-        <div className="fixed inset-0 bg-black/50 z-[1001] flex justify-center items-center animate-in zoom-in-95">
+        <div className="fixed inset-0 bg-black/50 z-[1001] flex justify-center items-center animate-in zoom-in-95 print:hidden">
           <div className="bg-white p-6 rounded-xl shadow-2xl w-[500px] border-l-4 border-red-500 relative flex flex-col max-h-[80vh]">
              <div className="flex items-center gap-3 mb-4 text-red-600 flex-shrink-0">
                <AlertTriangle size={32} />

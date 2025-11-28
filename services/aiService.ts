@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { AppSettings, VocabResult } from "../types";
 
@@ -26,24 +27,28 @@ export class AIService {
 
   async generateVocabNotes(payload: any[]): Promise<VocabResult[]> {
     const prompt = `
-      Role: English Dictionary for Chinese students.
-      Task: For each item, analyze 'focus_words' in the context of the 'en' sentence.
+      Role: Data Processing Agent for English Learners.
+      Task: Analyze 'focus_words' in the context of the 'en' sentence.
       
       Constraints:
-      1. STRICTLY EXCLUDE Proper Nouns (Names, Places).
-      2. 'cm' (Context Meaning): Provide ONLY the specific Chinese meaning of the word IN THIS SENTENCE. Keep it concise (2-4 chars usually). Do NOT list multiple meanings here.
-      3. 'def' (Side Definition): Provide the IPA and full Traditional Chinese definitions (including other meanings).
+      1. STRICTLY EXCLUDE Proper Nouns (Names, Places, Brands).
+      2. 'cm' (Context Meaning): Provide ONLY the specific Chinese meaning of the word IN THIS SENTENCE. Keep it concise (2-4 chars).
+      3. 'def' (Side Definition): 
+         - Provide the IPA and full Traditional Chinese definitions.
+         - CRITICAL: Identify if the word has multiple meanings or multiple parts of speech (Polysemy) relevant to the context or high-frequency usage.
+         - Format: IPA [space] ① [pos] Def 1 ② [pos] Def 2 ...
+         - Example: /rʌn/ ① [v.] 跑 ② [v.] 經營
       4. Difficulty Level (l):
           - Basic (Level 1-2): Return 1.
-          - Level 3-6: Return 3, 4, 5, or 6.
-          - Advanced / Out of syllabus: Return 99.
+          - Target (Level 3-6): Return 3, 4, 5, or 6.
+          - Extra / Out of syllabus: Return 99.
       
       Output JSON format:
       [
           {
               "id": "...",
               "vocab": [
-                  {"w": "word", "l": 4, "cm": "在此句的意思", "def": "v. [ipa] 完整解釋 (一詞多義...)"}
+                  {"w": "word", "l": 4, "cm": "在此句的意思", "def": "/ipa/ ① [v.] def1 ② [n.] def2"}
               ]
           }
       ]
