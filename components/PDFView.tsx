@@ -112,8 +112,8 @@ export const PDFView: React.FC<PDFViewProps> = ({ pdfItems, vocabDB, onRemoveIte
              <span className={`px-1 pb-0 pt-[2px] leading-none rounded-t-[3px] font-serif font-normal border-b border-dashed ${getBorderColor(level)} ${getHighlightBg(level)} ${getTextColor(level)} transition-colors`}>
               {part}
             </span>
-             {/* Chinese Meaning: Absolute positioning strictly below the line with NO gap (mt-0), Font Normal (no bold) */}
-            <span className="absolute left-1/2 -translate-x-1/2 top-full mt-0 text-[0.45em] text-slate-700 font-sans font-normal whitespace-nowrap leading-none pointer-events-none">
+             {/* Chinese Meaning: Absolute positioning strictly below the line with negative margin (-mt-[2px]) to pull it UP */}
+            <span className="absolute left-1/2 -translate-x-1/2 top-full -mt-[2px] text-[0.45em] text-slate-700 font-sans font-normal whitespace-nowrap leading-none pointer-events-none">
               {v.cm}
             </span>
           </span>
