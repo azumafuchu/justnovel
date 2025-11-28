@@ -1,5 +1,4 @@
 
-
 import React, { useMemo } from 'react';
 import { VocabDB } from '../types';
 import { getWordLevel, formatChapterTitle } from '../utils/textProcessing';
@@ -106,15 +105,15 @@ export const PDFView: React.FC<PDFViewProps> = ({ pdfItems, vocabDB, onRemoveIte
         if (level < 3 && level !== 99) return <span key={i}>{part}</span>;
         
         // Revised structure matching user request:
-        // English -> Thinner/Denser Dashed Underline (border-b) -> No Bold -> Chinese (mt-[1px])
+        // English -> Thinner/Denser Dashed Underline (border-b) -> No Bold -> Chinese (mt-0, font-normal)
         return (
           <span key={i} className="group relative inline-block mx-[2px] align-baseline">
              {/* English Word: Colored text, Tight dashed underline (border-b = 1px for finer line), no bold (font-normal) */}
              <span className={`px-1 pb-0 pt-[2px] leading-none rounded-t-[3px] font-serif font-normal border-b border-dashed ${getBorderColor(level)} ${getHighlightBg(level)} ${getTextColor(level)} transition-colors`}>
               {part}
             </span>
-             {/* Chinese Meaning: Absolute positioning strictly below the line with gap (mt-[1px]), Sans-serif */}
-            <span className="absolute left-1/2 -translate-x-1/2 top-full mt-[1px] text-[0.45em] text-slate-700 font-sans font-extrabold whitespace-nowrap leading-none pointer-events-none">
+             {/* Chinese Meaning: Absolute positioning strictly below the line with NO gap (mt-0), Font Normal (no bold) */}
+            <span className="absolute left-1/2 -translate-x-1/2 top-full mt-0 text-[0.45em] text-slate-700 font-sans font-normal whitespace-nowrap leading-none pointer-events-none">
               {v.cm}
             </span>
           </span>
