@@ -27,99 +27,6 @@ const Legend = () => (
   </div>
 );
 
-// --- Layout Heuristics ---
-
-// Helper to count valid (displayed) cards
-const getValidVocabCount = (vocab: any[], vocabDB: VocabDB) => {
-  if (!vocab) return 0;
-  return vocab.filter((v: any) => {
-    const l = parseInt(v.l) || getWordLevel(v.w, vocabDB);
-    // Only L3-6 generate cards in the sidebar
-    return l >= 3 && l <= 6;
-  }).length;
-};
-
-// Estimate visual height of text block (in arbitrary units)
-const estimateTextHeight = (en: string, cn: string) => {
-  // Constants based on Tailwind classes:
-  // EN: text-2xl leading-[2.8] (~67px per line)
-  // CN: text-sm leading-relaxed (~30px per line)
-  // Width: Left col is ~127mm (~480px)
-  
-  const enLen = en ? en.length : 0;
-  const cnLen = cn ? cn.length : 0;
-
-  // Approx 42 chars per line for EN (large font)
-  const enLines = Math.ceil(enLen / 42) || 1;
-  // Approx 25 chars per line for CN
-  const cnLines = Math.ceil(cnLen / 25) || 1;
-
-  // Weight: EN line = 6.7 units, CN line = 3.0 units
-  return (enLines * 6.7) + (cnLines * 3.0) + 2; // +2 buffer
-};
-
-// Estimate visual height of vocab cards
-const estimateCardHeight = (count: number) => {
-  // A single card is Title + Badge + Def + Margin
-  // Approx 45-50px tall. 
-  // Relative to EN line (67px), it's about 0.7 of a text line.
-  // Let's say 4.5 units.
-  return count * 4.5;
-};
-
-// Smart Chunking Algorithm
-const computeSmartChunks = (items: { type: string, data: any }[], vocabDB: VocabDB) => {
-  const chunks: any[] = [];
-  let currentBatch: { item: any, index: number }[] = [];
-  let accTextH = 0;
-  let accCardH = 0;
-
-  items.forEach((item, index) => {
-    // 1. Handle Breaks/Headers -> Force Close Batch
-    if (item.type !== 'content') {
-      if (currentBatch.length > 0) {
-        chunks.push({ type: 'smart-row', items: currentBatch });
-        currentBatch = [];
-        accTextH = 0;
-        accCardH = 0;
-      }
-      chunks.push({ type: 'item', item, index });
-      return;
-    }
-
-    // 2. Handle Content (Paragraphs)
-    currentBatch.push({ item, index });
-    
-    const tH = estimateTextHeight(item.data.en, item.data.cn);
-    const cH = estimateCardHeight(getValidVocabCount(item.data.vocab, vocabDB));
-    
-    accTextH += tH;
-    accCardH += cH;
-
-    // DECISION: Close the row or borrow space?
-    // Rule: If Text Height >= Card Height (with slight buffer), we can safely close the row.
-    // This ensures the NEXT row starts with cards aligned to the NEXT text.
-    // If Cards > Text, we DO NOT close, merging the next para to fill whitespace.
-    
-    // We add a small buffer (0.9) to prefer closing if it's close enough, 
-    // to prevent dragging rows too long unnecessarily.
-    if (accTextH >= accCardH * 0.95) {
-      chunks.push({ type: 'smart-row', items: currentBatch });
-      currentBatch = [];
-      accTextH = 0;
-      accCardH = 0;
-    }
-  });
-
-  // Push leftovers
-  if (currentBatch.length > 0) {
-    chunks.push({ type: 'smart-row', items: currentBatch });
-  }
-
-  return chunks;
-};
-
-
 // ForwardRef allows react-to-print to target this component's DOM node
 export const PDFView = React.forwardRef<HTMLDivElement, PDFViewProps>(({ pdfItems, vocabDB, onRemoveItem, onClearPdf, fontFamily, t }, ref) => {
   
@@ -284,9 +191,6 @@ export const PDFView = React.forwardRef<HTMLDivElement, PDFViewProps>(({ pdfItem
     return elements;
   };
 
-  // Compute Layout Groups
-  const processedGroups = computeSmartChunks(pdfItems, vocabDB);
-
   if (pdfItems.length === 0) {
      return (
         <div className="w-[210mm] min-h-[50vh] bg-white shadow-sm mx-auto p-20 text-center text-gray-400 border border-gray-100 rounded print:border-none">
@@ -339,82 +243,64 @@ export const PDFView = React.forwardRef<HTMLDivElement, PDFViewProps>(({ pdfItem
           className="w-full h-full relative"
           style={{ padding: '20mm' }}
         >
-           {processedGroups.map((group, gIdx) => (
-             <React.Fragment key={gIdx}>
-                
-                {/* 1. INDIVIDUAL ITEMS (Header / Break) */}
-                {group.type === 'item' && (
-                  <>
-                    {group.item.type === 'header' && (
-                      <div 
-                        className="break-inside-avoid page-break-box mb-4 pdf-avoid-break"
-                        style={{ pageBreakInside: 'avoid' }}
-                      >
-                        <div className="group relative text-center">
-                          <button onClick={() => onRemoveItem(group.index)} className="absolute -right-8 top-0 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity print:hidden p-2"><X size={20}/></button>
-                          <h1 className="text-4xl font-bold text-slate-800 font-serif mb-3 tracking-wide">
-                            {formatChapterTitle(group.item.data.text)}
-                          </h1>
-                          <div className="flex items-center justify-center gap-4 mb-2">
-                              <div className="h-px w-12 bg-gray-300"></div>
-                              <h2 className="text-sm font-cn text-slate-500 tracking-[0.2em] uppercase">
-                              {group.item.data.text}
-                              </h2>
-                              <div className="h-px w-12 bg-gray-300"></div>
-                          </div>
-                          <Legend />
-                        </div>
+           {pdfItems.map((item, index) => {
+             // 1. HEADER (Clear Both)
+             if (item.type === 'header') {
+               return (
+                  <div 
+                    key={index}
+                    className="break-inside-avoid page-break-box mb-4 pdf-avoid-break"
+                    style={{ pageBreakInside: 'avoid', clear: 'both' }}
+                  >
+                    <div className="group relative text-center">
+                      <button onClick={() => onRemoveItem(index)} className="absolute -right-8 top-0 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity print:hidden p-2"><X size={20}/></button>
+                      <h1 className="text-4xl font-bold text-slate-800 font-serif mb-3 tracking-wide">
+                        {formatChapterTitle(item.data.text)}
+                      </h1>
+                      <div className="flex items-center justify-center gap-4 mb-2">
+                          <div className="h-px w-12 bg-gray-300"></div>
+                          <h2 className="text-sm font-cn text-slate-500 tracking-[0.2em] uppercase">
+                          {item.data.text}
+                          </h2>
+                          <div className="h-px w-12 bg-gray-300"></div>
                       </div>
-                    )}
-                    
-                    {group.item.type === 'break' && (
-                       <div className="html2pdf__page-break relative group print:break-after-page">
-                          <div className="print:hidden w-full border-t-2 border-dashed border-gray-300 my-4 flex justify-center">
-                              <span className="bg-white px-2 text-xs text-gray-400 font-bold -mt-2">Page Break</span>
-                              <button onClick={() => onRemoveItem(group.index)} className="absolute right-0 -top-3 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-white border border-red-100 rounded-full"><X size={14}/></button>
-                          </div>
-                       </div>
-                    )}
-                  </>
-                )}
-
-                {/* 2. SMART ROW (Synchronized Layout) */}
-                {group.type === 'smart-row' && (
-                  // UNLOCKED CONTAINER: Removed 'break-inside-avoid' to allow rows to span pages
-                  <div className="grid grid-cols-[3fr_1fr] gap-8 items-start mb-0">
-                    
-                    {/* LEFT COLUMN: Text Paragraphs in this Row */}
-                    <div className="block">
-                      {group.items.map((entry: any, i: number) => (
-                        <div 
-                          key={i} 
-                          className="group relative mb-0 !block !h-auto !min-h-0"
-                        >
-                           <button onClick={() => onRemoveItem(entry.index)} className="absolute -left-8 top-0 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity print:hidden p-1"><X size={16}/></button>
-                           <div className="text-col !block !h-auto !min-h-0">
-                              <div 
-                                className="text-justify text-2xl leading-[2.8] text-slate-800 !block !h-auto !min-h-0"
-                                style={{ 
-                                  fontFamily: fontFamily,
-                                  orphans: 2, 
-                                  widows: 2,
-                                  breakInside: 'auto' // Explicitly allow breaking text paragraphs
-                                }}
-                              >
-                                {renderHighlightedText(entry.item.data.en, entry.item.data.vocab)}
-                              </div>
-                              <div className="text-sm text-slate-500 font-cn my-6 pl-4 border-l-2 border-slate-200 leading-relaxed opacity-90 break-inside-avoid">
-                                {entry.item.data.cn}
-                              </div>
-                          </div>
-                        </div>
-                      ))}
+                      <Legend />
                     </div>
+                  </div>
+               );
+             }
 
-                    {/* RIGHT COLUMN: Vocab Cards for this Row */}
-                    <div className="block pt-0">
-                      {group.items.flatMap((entry: any) => 
-                        (entry.item.data.vocab || [])
+             // 2. BREAK (Clear Both)
+             if (item.type === 'break') {
+               return (
+                 <div key={index} className="html2pdf__page-break relative group print:break-after-page" style={{ clear: 'both' }}>
+                    <div className="print:hidden w-full border-t-2 border-dashed border-gray-300 my-4 flex justify-center">
+                        <span className="bg-white px-2 text-xs text-gray-400 font-bold -mt-2">Page Break</span>
+                        <button onClick={() => onRemoveItem(index)} className="absolute right-0 -top-3 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-white border border-red-100 rounded-full"><X size={14}/></button>
+                    </div>
+                 </div>
+               );
+             }
+
+             // 3. CONTENT (Float & Clear Strategy)
+             if (item.type === 'content') {
+               return (
+                 <div key={index} className="group relative mb-0">
+                    <button onClick={() => onRemoveItem(index)} className="absolute -left-8 top-0 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity print:hidden p-1"><X size={16}/></button>
+                    
+                    {/* RIGHT: Vocab Cards (Float Right + Clear Right) */}
+                    {/* Rendered FIRST so it floats to the right side of the container */}
+                    <div 
+                       className="vocab-lane"
+                       style={{ 
+                          float: 'right', 
+                          clear: 'right', 
+                          width: '50mm',
+                          marginBottom: '0',
+                          paddingLeft: '10px'
+                       }}
+                    >
+                        {(item.data.vocab || [])
                           .filter((v: any) => {
                              const l = parseInt(v.l) || getWordLevel(v.w, vocabDB);
                              return l >= 3 && l <= 6; 
@@ -423,14 +309,14 @@ export const PDFView = React.forwardRef<HTMLDivElement, PDFViewProps>(({ pdfItem
                              const level = parseInt(v.l) || getWordLevel(v.w, vocabDB);
                              return (
                                 <div 
-                                  key={`${entry.index}-${vIdx}`} 
+                                  key={vIdx} 
                                   className={`
                                     relative block border-l-2 pl-3 py-2 rounded-r-sm mb-2 break-inside-avoid
                                     ${getLevelClass(level)} ${getHighlightBg(level)}
                                   `}
                                   style={{ 
                                     pageBreakInside: 'avoid', 
-                                    breakInside: 'avoid', // ATOMIC: Keep individual cards intact
+                                    breakInside: 'avoid', // ATOMIC
                                     display: 'block'
                                   }}
                                 >
@@ -444,14 +330,42 @@ export const PDFView = React.forwardRef<HTMLDivElement, PDFViewProps>(({ pdfItem
                                 </div>
                              )
                           })
-                      )}
+                        }
                     </div>
 
-                  </div>
-                )}
+                    {/* LEFT: Text Content (Block + Margin Right) */}
+                    {/* Rendered SECOND. It flows in standard block but respects the margin 'lane' */}
+                    <div 
+                      className="text-lane"
+                      style={{ 
+                         marginRight: '55mm', // Creates the empty lane for the float
+                         display: 'block' 
+                      }}
+                    >
+                        <div 
+                          className="text-justify text-2xl leading-[2.8] text-slate-800"
+                          style={{ 
+                            fontFamily: fontFamily,
+                            orphans: 2, 
+                            widows: 2,
+                          }}
+                        >
+                          {renderHighlightedText(item.data.en, item.data.vocab)}
+                        </div>
+                        <div className="text-sm text-slate-500 font-cn my-6 pl-4 border-l-2 border-slate-200 leading-relaxed opacity-90 break-inside-avoid">
+                          {item.data.cn}
+                        </div>
+                    </div>
 
-             </React.Fragment>
-           ))}
+                    {/* Clearfix for visual debugging in browser, though pdf flow handles it naturally */}
+                    <div className="clearfix" style={{ content: '""', display: 'table', clear: 'both' }}></div>
+                 </div>
+               );
+             }
+             return null;
+           })}
+           {/* Final Clearfix */}
+           <div style={{ clear: 'both' }}></div>
         </div>
       </div>
     </>
