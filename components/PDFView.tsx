@@ -27,7 +27,8 @@ const Legend = () => (
   </div>
 );
 
-export const PDFView: React.FC<PDFViewProps> = ({ pdfItems, vocabDB, onRemoveItem, onClearPdf, fontFamily, t }) => {
+// ForwardRef allows react-to-print to target this component's DOM node
+export const PDFView = React.forwardRef<HTMLDivElement, PDFViewProps>(({ pdfItems, vocabDB, onRemoveItem, onClearPdf, fontFamily, t }, ref) => {
   
   // State for vertical offset of Chinese text (Gap between EN and CN)
   const [cnOffset, setCnOffset] = useState<number>(() => {
@@ -259,6 +260,7 @@ export const PDFView: React.FC<PDFViewProps> = ({ pdfItems, vocabDB, onRemoveIte
 
       <div 
         id="pdf-root" 
+        ref={ref}
         className="w-[210mm] min-h-screen bg-white shadow-xl mx-auto relative group/page print:w-full print:h-auto print:min-h-0 print:shadow-none print:m-0 print:bg-transparent"
       >
         <div 
@@ -324,8 +326,9 @@ export const PDFView: React.FC<PDFViewProps> = ({ pdfItems, vocabDB, onRemoveIte
                                 className="text-justify text-2xl leading-[2.8] text-slate-800 !block !h-auto !min-h-0"
                                 style={{ 
                                   fontFamily: fontFamily,
-                                  orphans: 4, // Aggressive orphan control
-                                  widows: 4   // Aggressive widow control
+                                  orphans: 2, // Flow naturally, prevent single lines
+                                  widows: 2,  // Flow naturally, prevent single lines
+                                  breakInside: 'auto' // Allow paragraph to split across pages
                                 }}
                               >
                                 {renderHighlightedText(entry.item.data.en, entry.item.data.vocab)}
@@ -354,11 +357,16 @@ export const PDFView: React.FC<PDFViewProps> = ({ pdfItems, vocabDB, onRemoveIte
                                 <div 
                                   key={`${entry.index}-${vIdx}`} 
                                   // KEEP: pdf-avoid-break here to prevent slicing small cards
+                                  // ADD: display: block and margin-bottom to ensure safe print boundaries
                                   className={`
-                                    break-inside-avoid border-l-2 pl-3 py-2 rounded-r-sm pdf-avoid-break
+                                    break-inside-avoid border-l-2 pl-3 py-2 rounded-r-sm pdf-avoid-break mb-2
                                     ${getLevelClass(level)} ${getHighlightBg(level)}
                                   `}
-                                  style={{ pageBreakInside: 'avoid' }}
+                                  style={{ 
+                                    pageBreakInside: 'avoid', 
+                                    breakInside: 'avoid',
+                                    display: 'block'
+                                  }}
                                 >
                                   <div className="flex items-center flex-wrap gap-1.5 mb-1">
                                     <span className="font-bold text-[15px] text-slate-800 font-sans">{v.w}</span>
@@ -382,4 +390,6 @@ export const PDFView: React.FC<PDFViewProps> = ({ pdfItems, vocabDB, onRemoveIte
       </div>
     </>
   );
-};
+});
+
+PDFView.displayName = 'PDFView';
