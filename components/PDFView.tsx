@@ -312,7 +312,6 @@ export const PDFView = React.forwardRef<HTMLDivElement, PDFViewProps>(({ pdfItem
                   <div className="grid grid-cols-[3fr_1fr] gap-12 items-start mb-0">
                     
                     {/* LEFT COLUMN: All Text Paragraphs - WATER FLOW */}
-                    {/* CRITICAL FIX: Changed from flex-col to block to prevent print slicing issues */}
                     <div className="block">
                       {group.items.map((entry: any, i: number) => (
                         <div 
@@ -343,7 +342,6 @@ export const PDFView = React.forwardRef<HTMLDivElement, PDFViewProps>(({ pdfItem
                     </div>
 
                     {/* RIGHT COLUMN: All Vocab Cards (Tetris Stack) */}
-                    {/* CHANGED: Switched from flex to block to prevent print slicing issues in sidebar */}
                     <div className="block pt-0">
                       {group.items.flatMap((entry: any) => 
                         (entry.item.data.vocab || [])
@@ -357,15 +355,17 @@ export const PDFView = React.forwardRef<HTMLDivElement, PDFViewProps>(({ pdfItem
                              return (
                                 <div 
                                   key={`${entry.index}-${vIdx}`} 
-                                  // KEEP: pdf-avoid-break here to prevent slicing small cards
-                                  // ADD: display: block and margin-bottom to ensure safe print boundaries
+                                  // CRITICAL FIX: Atomic integrity for vocabulary cards
+                                  // display: block ensures the card is treated as a solid block.
+                                  // break-inside: avoid prevents slicing.
                                   className={`
-                                    relative block break-inside-avoid border-l-2 pl-3 py-2 rounded-r-sm pdf-avoid-break mb-2
+                                    relative block border-l-2 pl-3 py-2 rounded-r-sm mb-2 break-inside-avoid
                                     ${getLevelClass(level)} ${getHighlightBg(level)}
                                   `}
                                   style={{ 
                                     pageBreakInside: 'avoid', 
-                                    breakInside: 'avoid'
+                                    breakInside: 'avoid',
+                                    display: 'block'
                                   }}
                                 >
                                   <div className="flex items-center flex-wrap gap-1.5 mb-1">
