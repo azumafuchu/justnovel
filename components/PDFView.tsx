@@ -380,7 +380,8 @@ export const PDFView = React.forwardRef<HTMLDivElement, PDFViewProps>(({ pdfItem
 
                 {/* 2. SMART ROW (Synchronized Layout) */}
                 {group.type === 'smart-row' && (
-                  <div className="grid grid-cols-[3fr_1fr] gap-8 items-start mb-0 break-inside-avoid">
+                  // UNLOCKED CONTAINER: Removed 'break-inside-avoid' to allow rows to span pages
+                  <div className="grid grid-cols-[3fr_1fr] gap-8 items-start mb-0">
                     
                     {/* LEFT COLUMN: Text Paragraphs in this Row */}
                     <div className="block">
@@ -397,7 +398,7 @@ export const PDFView = React.forwardRef<HTMLDivElement, PDFViewProps>(({ pdfItem
                                   fontFamily: fontFamily,
                                   orphans: 2, 
                                   widows: 2,
-                                  breakInside: 'auto'
+                                  breakInside: 'auto' // Explicitly allow breaking text paragraphs
                                 }}
                               >
                                 {renderHighlightedText(entry.item.data.en, entry.item.data.vocab)}
@@ -429,7 +430,7 @@ export const PDFView = React.forwardRef<HTMLDivElement, PDFViewProps>(({ pdfItem
                                   `}
                                   style={{ 
                                     pageBreakInside: 'avoid', 
-                                    breakInside: 'avoid',
+                                    breakInside: 'avoid', // ATOMIC: Keep individual cards intact
                                     display: 'block'
                                   }}
                                 >
