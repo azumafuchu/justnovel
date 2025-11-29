@@ -63,6 +63,19 @@ export class AIService {
     }
   }
 
+  private cleanJson(text: string): string {
+    // 1. Remove Markdown code blocks
+    let clean = text.replace(/```json/g, "").replace(/```/g, "").trim();
+    
+    // 2. Try to extract JSON array or object if there is extra text
+    const jsonMatch = clean.match(/(\[[\s\S]*\]|\{[\s\S]*\})/);
+    if (jsonMatch) {
+      clean = jsonMatch[0];
+    }
+
+    return clean;
+  }
+
   private async callGemini(prompt: string, expectJson: boolean): Promise<any> {
     try {
       // Use this.settings.apiKey instead of process.env.API_KEY which is not available in browser
@@ -77,7 +90,13 @@ export class AIService {
       if (!text) throw new Error("Empty response from Gemini");
 
       if (expectJson) {
-        return JSON.parse(text.replace(/```json/g, "").replace(/```/g, "").trim());
+        const cleanText = this.cleanJson(text);
+        try {
+          return JSON.parse(cleanText);
+        } catch (e) {
+          console.error("JSON Parse Error. Raw text:", text, "Cleaned text:", cleanText);
+          throw new Error("Failed to parse JSON response from AI");
+        }
       }
       return text;
     } catch (error: any) {
@@ -174,8 +193,13 @@ export class AIService {
       }
 
       if (expectJson) {
-        const cleanJson = content.replace(/```json/g, "").replace(/```/g, "").trim();
-        return JSON.parse(cleanJson);
+        const cleanText = this.cleanJson(content);
+        try {
+          return JSON.parse(cleanText);
+        } catch (e) {
+           console.error("JSON Parse Error. Raw text:", content, "Cleaned text:", cleanText);
+           throw new Error("Failed to parse JSON response from AI");
+        }
       }
       return content;
 
